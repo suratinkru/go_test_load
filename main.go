@@ -41,6 +41,7 @@ func main() {
 	router := gin.Default()
 
 	router.POST("/insertData", insertData)
+	router.GET("/checkData", checkData) // Add this line to create a new route
 	// Other routes...
 
 	router.Run(":3000")
@@ -67,4 +68,20 @@ func insertData(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Data inserted successfully"})
+}
+
+func checkData(c *gin.Context) {
+	ctx := context.Background()
+	countResult, err := client.Count().
+		Index("_all"). // Count across all indices
+		Query(elastic.NewMatchAllQuery()).
+		Do(ctx)
+
+	if err != nil {
+		log.Printf("Error searching Elasticsearch: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"count": countResult})
 }
